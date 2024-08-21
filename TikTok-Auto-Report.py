@@ -78,7 +78,7 @@ def display_report():
     table.add_row("Good Report", Text(str(gg), style="green"))
     table.add_row("Bad Report", Text(str(bb), style="red"))
     table.add_row("Total", Text(str(total), style="yellow"))
-    table.add_row("Dev", "t.me/DarkTeamTermuxExploration")
+    table.add_row("Dev", "t.me/freeinterneto1")
     table.add_row("User", Text(user, style="cyan"))
     table.add_row("Name", Text(nm, style="cyan"))
     table.add_row("Followers", Text(folo, style="green"))
