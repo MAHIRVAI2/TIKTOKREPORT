@@ -18,7 +18,7 @@ bb = 0
 console = Console()
 
 # Join Telegram group (Ensure this URL is correct)
-os.system('xdg-open https://t.me/DarkTeamTermuxExploration')
+os.system('xdg-open https://t.me/freeinterneto1')
 
 # Input target username
 os.system('clear')
