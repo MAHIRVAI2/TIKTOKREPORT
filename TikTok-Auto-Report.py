@@ -5,7 +5,6 @@ import sys
 import os
 import time
 
-# ফেক ইনস্টল স্ক্রিন
 def fake_install():
     print("""
 ╔══════════════════════════════════════════════════════════════╗
